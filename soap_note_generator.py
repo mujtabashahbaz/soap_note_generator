@@ -10,15 +10,8 @@ except ImportError:
 
 # Function to get or set the API key
 def get_openai_api_key():
-    if 'openai_api_key' not in st.session_state:
-        try:
-            st.session_state['openai_api_key'] = st.secrets["openai_api_key"]
-        except FileNotFoundError:
-            st.session_state['openai_api_key'] = ""
-    
-    if not st.session_state['openai_api_key']:
+    if 'openai_api_key' not in st.session_state or not st.session_state['openai_api_key']:
         st.session_state['openai_api_key'] = st.text_input("Enter your OpenAI API key:", type="password")
-    
     return st.session_state['openai_api_key']
 
 def extract_info(conversation):
@@ -64,6 +57,9 @@ if not openai_installed:
     st.code("pip install openai")
     st.info("After installing, please restart the Streamlit app.")
 
+# API Key input
+api_key = get_openai_api_key()
+
 # ChatGPT conversation input
 st.subheader('ChatGPT Conversation')
 conversation = st.text_area("Paste your ChatGPT conversation here:", height=200)
@@ -87,10 +83,13 @@ objective = st.text_area("Objective information:", value=st.session_state.get('o
 # Generate button
 if st.button('Generate SOAP Note'):
     if subjective and objective:
-        with st.spinner('Generating SOAP Note...'):
-            soap_note = generate_soap_note(subjective, objective)
-        st.subheader('Generated SOAP Note')
-        st.text_area("", value=soap_note, height=300)
+        if api_key:
+            with st.spinner('Generating SOAP Note...'):
+                soap_note = generate_soap_note(subjective, objective)
+            st.subheader('Generated SOAP Note')
+            st.text_area("", value=soap_note, height=300)
+        else:
+            st.warning('Please enter your OpenAI API key to generate the SOAP note.')
     else:
         st.warning('Please provide both subjective and objective information.')
 
@@ -100,4 +99,4 @@ st.sidebar.info('This app uses AI to generate medical SOAP notes based on subjec
 
 # Add a note about the API key
 st.sidebar.title('API Key')
-st.sidebar.info('This app requires an OpenAI API key to function. If you haven\'t provided one in the secrets.toml file, you\'ll be prompted to enter it when you start the app. Your API key is not stored permanently and will need to be re-entered each time you restart the app.')
+st.sidebar.info('This app requires an OpenAI API key to function. You\'ll be prompted to enter it when you start the app. Your API key is not stored permanently and will need to be re-entered each time you restart the app.')
