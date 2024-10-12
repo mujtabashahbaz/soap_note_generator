@@ -1,6 +1,12 @@
 import streamlit as st
 import re
-from openai import OpenAI
+
+# Check if openai is installed
+try:
+    from openai import OpenAI
+    openai_installed = True
+except ImportError:
+    openai_installed = False
 
 # Function to get or set the API key
 def get_openai_api_key():
@@ -15,14 +21,6 @@ def get_openai_api_key():
     
     return st.session_state['openai_api_key']
 
-# Initialize the OpenAI client
-api_key = get_openai_api_key()
-if api_key:
-    client = OpenAI(api_key=api_key)
-else:
-    st.warning("Please enter a valid OpenAI API key to use this app.")
-    st.stop()
-
 def extract_info(conversation):
     # Extract Subjective information
     subjective_match = re.search(r'Subjective:(.*?)(?:Objective:|$)', conversation, re.DOTALL | re.IGNORECASE)
@@ -35,6 +33,14 @@ def extract_info(conversation):
     return subjective, objective
 
 def generate_soap_note(subjective, objective):
+    if not openai_installed:
+        return "Error: OpenAI library is not installed. Please install it to use this feature."
+
+    api_key = get_openai_api_key()
+    if not api_key:
+        return "Error: Please enter a valid OpenAI API key to use this feature."
+
+    client = OpenAI(api_key=api_key)
     prompt = f"Generate a medical SOAP note based on the following information:\n\nSubjective: {subjective}\n\nObjective: {objective}\n\nPlease provide the Assessment and Plan sections."
 
     try:
@@ -51,6 +57,12 @@ def generate_soap_note(subjective, objective):
 
 # Streamlit app
 st.title('AI SOAP Note Generator')
+
+if not openai_installed:
+    st.warning("The OpenAI library is not installed. Some features of this app may not work.")
+    st.info("To install the OpenAI library, run the following command in your terminal:")
+    st.code("pip install openai")
+    st.info("After installing, please restart the Streamlit app.")
 
 # ChatGPT conversation input
 st.subheader('ChatGPT Conversation')
