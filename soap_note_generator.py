@@ -58,7 +58,7 @@ Ensure the note is detailed, professional, and follows standard medical terminol
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an experienced orthodontist generating comprehensive SOAP notes, including differential diagnoses and detailed orthodontic treatment plans."},
+                {"role": "system", "content": "You are an experienced dentist generating comprehensive SOAP notes, including differential diagnoses and detailed treatment plans with medications and dosages."},
                 {"role": "user", "content": prompt}
             ]
         )
