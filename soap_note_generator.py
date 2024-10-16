@@ -220,7 +220,3 @@ st.sidebar.info('This enhanced app uses AI to generate comprehensive medical SOA
 # Add a note about the API key
 st.sidebar.title('API Key')
 st.sidebar.info('This app requires an OpenAI API key to function. You\'ll be prompted to enter it when you start the app. Your API key is not stored permanently and will need to be re-entered each time you restart the app.')
-
-# Add a disclaimer
-st.sidebar.title('Disclaimer')
-st.sidebar.warning('This app is for educational and demonstration purposes only. The generated SOAP notes, including diagnoses and prescriptions, should not be used for actual medical decision-making without review and approval by a licensed healthcare professional.')
