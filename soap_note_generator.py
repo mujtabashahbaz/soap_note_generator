@@ -1,12 +1,6 @@
 import streamlit as st
 import re
-
-# Check if openai is installed
-try:
-    from openai import OpenAI
-    openai_installed = True
-except ImportError:
-    openai_installed = False
+import requests
 
 # Function to get or set the API key
 def get_openai_api_key():
@@ -25,15 +19,8 @@ def extract_info(conversation):
     
     return subjective, objective
 
-def generate_soap_note(subjective, objective):
-    if not openai_installed:
-        return "Error: OpenAI library is not installed. Please install it to use this feature."
-
-    api_key = get_openai_api_key()
-    if not api_key:
-        return "Error: Please enter a valid OpenAI API key to use this feature."
-
-    client = OpenAI(api_key=api_key)
+# Function to generate SOAP note using OpenAI's REST API
+def generate_soap_note(subjective, objective, api_key):
     prompt = f"""Generate a comprehensive medical SOAP note based on the following information:
 
 Subjective: {subjective}
@@ -54,44 +41,108 @@ Please provide the following sections:
 
 Ensure the note is detailed, professional, and follows standard medical terminology and format."""
 
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    data = {
+        "model": "gpt-3.5-turbo",
+        "messages": [
+            {"role": "system", "content": "You are an experienced physician generating comprehensive SOAP notes, including differential diagnoses and detailed treatment plans with medications and dosages."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an experienced dentist generating comprehensive SOAP notes, including differential diagnoses and detailed treatment plans with medications and dosages."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content.strip()
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+        response.raise_for_status()  # Check for HTTP errors
+        result = response.json()
+        return result['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Function to transcribe audio to text using OpenAI's Whisper API via REST
+def transcribe_audio(file, api_key):
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    files = {
+        'file': file,
+        'model': (None, 'whisper-1')
+    }
+
+    try:
+        response = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files)
+        response.raise_for_status()  # Check for HTTP errors
+        result = response.json()
+        return result['text']
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Function to parse transcribed text and classify information into Subjective and Objective
+def classify_subjective_objective(transcription, api_key):
+    prompt = f"""You will classify the provided text into Subjective (patient-reported symptoms) and Objective (doctor's examination findings).
+    
+Text: {transcription}
+
+Classify it into the following format:
+Subjective: [patient's reported symptoms]
+Objective: [doctor's examination findings]
+"""
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    data = {
+        "model": "gpt-3.5-turbo",
+        "messages": [
+            {"role": "system", "content": "You are a physician assistant helping to classify subjective and objective information."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+    try:
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+        response.raise_for_status()  # Check for HTTP errors
+        result = response.json()
+        return extract_info(result['choices'][0]['message']['content'])
     except Exception as e:
         return f"Error: {str(e)}"
 
 # Streamlit app
-st.title('Enhanced AI SOAP Note Generator')
-
-if not openai_installed:
-    st.warning("The OpenAI library is not installed. Some features of this app may not work.")
-    st.info("To install the OpenAI library, run the following command in your terminal:")
-    st.code("pip install openai")
-    st.info("After installing, please restart the Streamlit app.")
+st.title("AiDentify's AI-Powered SOAP Note Generator with Speech-to-Text Integration")
 
 # API Key input
 api_key = get_openai_api_key()
 
-# ChatGPT conversation input
-st.subheader('ChatGPT Conversation')
-conversation = st.text_area("Paste your ChatGPT conversation here:", height=200)
+# Audio file upload for transcription
+st.subheader('Upload an Audio File (Optional)')
+audio_file = st.file_uploader("Upload an audio file for transcription (e.g., a patient conversation)", type=['wav', 'mp3', 'm4a'])
 
-# Extract button
-if st.button('Extract Subjective and Objective'):
-    if conversation:
-        subjective, objective = extract_info(conversation)
-        st.session_state['subjective'] = subjective
-        st.session_state['objective'] = objective
+# Transcribe button
+if st.button('Transcribe Audio'):
+    if audio_file and api_key:
+        with st.spinner('Transcribing audio...'):
+            transcription = transcribe_audio(audio_file, api_key)
+            if transcription.startswith("Error"):
+                st.error(transcription)
+            else:
+                with st.spinner('Classifying Subjective and Objective...'):
+                    subjective, objective = classify_subjective_objective(transcription, api_key)
+                    if subjective and objective:
+                        st.session_state['subjective'] = subjective
+                        st.session_state['objective'] = objective
+                        st.success('Subjective and Objective extracted successfully!')
+                    else:
+                        st.error('Error in extracting Subjective and Objective.')
     else:
-        st.warning('Please paste a conversation before extracting.')
+        st.warning('Please upload an audio file and provide a valid API key.')
 
-# Subjective and Objective inputs
+# Subjective and Objective inputs (manual entry)
 st.subheader('Subjective')
 subjective = st.text_area("Subjective information:", value=st.session_state.get('subjective', ''), height=100)
 
@@ -103,9 +154,9 @@ if st.button('Generate Enhanced SOAP Note'):
     if subjective and objective:
         if api_key:
             with st.spinner('Generating Enhanced SOAP Note...'):
-                soap_note = generate_soap_note(subjective, objective)
+                soap_note = generate_soap_note(subjective, objective, api_key)
             st.subheader('Generated Enhanced SOAP Note')
-            st.text_area("", value=soap_note, height=500)
+            st.text_area("Generated SOAP Note", value=soap_note, height=500, label_visibility="hidden")
         else:
             st.warning('Please enter your OpenAI API key to generate the SOAP note.')
     else:
@@ -113,7 +164,7 @@ if st.button('Generate Enhanced SOAP Note'):
 
 # Add information about the app
 st.sidebar.title('About')
-st.sidebar.info('This enhanced app uses AI to generate comprehensive medical SOAP notes, including differential diagnoses and detailed treatment plans with prescriptions. You can paste a ChatGPT conversation to automatically extract subjective and objective information, or input it manually.')
+st.sidebar.info('This enhanced app uses AI to generate comprehensive medical SOAP notes, including differential diagnoses and detailed treatment plans with prescriptions. You can upload an audio file for automatic transcription or manually input subjective and objective information.')
 
 # Add a note about the API key
 st.sidebar.title('API Key')
