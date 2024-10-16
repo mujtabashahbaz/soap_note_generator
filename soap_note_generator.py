@@ -112,7 +112,7 @@ def generate_soap_note(specialty, subjective, objective, api_key):
     }
 
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4",
         "messages": [
             {"role": "system", "content": "You are an experienced dentist generating SOAP notes."},
             {"role": "user", "content": prompt}
