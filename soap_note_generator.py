@@ -113,8 +113,51 @@ Objective: [doctor's examination findings]
     except Exception as e:
         return f"Error: {str(e)}"
 
+# Function to convert SOAP note into styled HTML
+def convert_to_html(soap_note):
+    # Split the SOAP note into Subjective and Objective parts if possible
+    if 'Objective:' in soap_note:
+        parts = soap_note.split('Objective:')
+        subjective = parts[0].strip()  # The part before 'Objective:'
+        objective = parts[1].strip()   # The part after 'Objective:'
+    else:
+        # If 'Objective:' is not found, treat everything as subjective and leave objective blank
+        subjective = soap_note.strip()
+        objective = "Objective information not found."
+
+    # Example of styling for SOAP note
+    styled_html = f"""
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
+        <h2 style="color: #2c3e50;">SOAP Note</h2>
+        <p><strong>Subjective:</strong> {subjective}</p>
+        <p><strong>Objective:</strong> {objective}</p>
+    </div>
+    """
+    return styled_html
+
+# JavaScript to add the copy-to-clipboard functionality
+def get_copy_button_html(styled_html):
+    # Escape backticks and ensure the HTML is correctly formatted for JavaScript
+    escaped_html = styled_html.replace("`", "\\`").replace("\n", "\\n").replace('"', '\\"')
+    
+    return f"""
+    <button onclick="copyToClipboard()">Copy SOAP Note</button>
+    <script>
+        function copyToClipboard() {{
+            const text = `{escaped_html}`;
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert('SOAP Note copied to clipboard!');
+        }}
+    </script>
+    """
+
 # Streamlit app
-st.title("AiDentify's AI-Powered SOAP Note Generator with Speech-to-Text Integration")
+st.title('Enhanced AI SOAP Note Generator with Speech-to-Text')
 
 # API Key input
 api_key = get_openai_api_key()
@@ -155,8 +198,16 @@ if st.button('Generate Enhanced SOAP Note'):
         if api_key:
             with st.spinner('Generating Enhanced SOAP Note...'):
                 soap_note = generate_soap_note(subjective, objective, api_key)
-            st.subheader('Generated Enhanced SOAP Note')
-            st.text_area("Generated SOAP Note", value=soap_note, height=500, label_visibility="hidden")
+
+            # Convert SOAP note to styled HTML
+            styled_html = convert_to_html(soap_note)
+
+            # Display the SOAP note as styled HTML
+            st.markdown(styled_html, unsafe_allow_html=True)
+
+            # Add the copy button
+            copy_button_html = get_copy_button_html(styled_html)
+            st.markdown(copy_button_html, unsafe_allow_html=True)
         else:
             st.warning('Please enter your OpenAI API key to generate the SOAP note.')
     else:
