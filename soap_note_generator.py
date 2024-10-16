@@ -127,7 +127,7 @@ def convert_to_html(soap_note):
 
     # Example of styling for SOAP note
     styled_html = f"""
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
+    <div id="soap-note" style="font-family: Arial, sans-serif; line-height: 1.6; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
         <h2 style="color: #2c3e50;">SOAP Note</h2>
         <p><strong>Subjective:</strong> {subjective}</p>
         <p><strong>Objective:</strong> {objective}</p>
@@ -136,23 +136,20 @@ def convert_to_html(soap_note):
     return styled_html
 
 # JavaScript to add the copy-to-clipboard functionality
-def get_copy_button_html(styled_html):
-    # Escape backticks and ensure the HTML is correctly formatted for JavaScript
-    escaped_html = styled_html.replace("`", "\\`").replace("\n", "\\n").replace('"', '\\"')
-    
-    return f"""
+def get_copy_button_html():
+    return """
     <button onclick="copyToClipboard()">Copy SOAP Note</button>
     <script>
-        function copyToClipboard() {{
-            const text = `{escaped_html}`;
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert('SOAP Note copied to clipboard!');
-        }}
+        function copyToClipboard() {
+            var note = document.getElementById("soap-note");
+            var range = document.createRange();
+            range.selectNode(note);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand("copy");
+            window.getSelection().removeAllRanges();
+            alert("SOAP Note copied to clipboard!");
+        }
     </script>
     """
 
@@ -202,12 +199,8 @@ if st.button('Generate Enhanced SOAP Note'):
             # Convert SOAP note to styled HTML
             styled_html = convert_to_html(soap_note)
 
-            # Display the SOAP note as styled HTML
-            st.markdown(styled_html, unsafe_allow_html=True)
-
-            # Add the copy button
-            copy_button_html = get_copy_button_html(styled_html)
-            st.markdown(copy_button_html, unsafe_allow_html=True)
+            # Display the SOAP note and the copy button using Streamlit's HTML component
+            st.components.v1.html(styled_html + get_copy_button_html(), height=400)
         else:
             st.warning('Please enter your OpenAI API key to generate the SOAP note.')
     else:
@@ -220,3 +213,7 @@ st.sidebar.info('This enhanced app uses AI to generate comprehensive medical SOA
 # Add a note about the API key
 st.sidebar.title('API Key')
 st.sidebar.info('This app requires an OpenAI API key to function. You\'ll be prompted to enter it when you start the app. Your API key is not stored permanently and will need to be re-entered each time you restart the app.')
+
+# Add a disclaimer
+st.sidebar.title('Disclaimer')
+st.sidebar.warning('This app is for educational and demonstration purposes only. The generated SOAP notes, including diagnoses and prescriptions, should not be used for actual medical decision-making without review and approval by a licensed healthcare professional.')
