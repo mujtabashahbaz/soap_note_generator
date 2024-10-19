@@ -128,6 +128,15 @@ def generate_soap_note(specialty, subjective, objective, api_key):
         return f"Error: {str(e)}"
 
 # Streamlit app
+
+# "Back to Homepage" link at the top
+st.markdown(
+    '<div style="text-align:left;">'
+    '<a href="https://aidentify.online" style="font-size:24px; color:white; text-decoration:none;">'
+    '⬅️ Back to Homepage</a></div>', 
+    unsafe_allow_html=True
+)
+
 st.title('AI-Powered SOAP Note Generator for Dentists')
 
 # API Key input
@@ -156,6 +165,14 @@ if st.button('Generate SOAP Note'):
             st.warning('Please enter your OpenAI API key to generate the SOAP note.')
     else:
         st.warning('Please provide both subjective and objective information.')
+
+# "Back to Homepage" link at the bottom
+st.markdown(
+    '<div style="text-align:left;">'
+    '<a href="https://aidentify.online" style="font-size:24px; color:white; text-decoration:none;">'
+    '⬅️ Back to Homepage</a></div>', 
+    unsafe_allow_html=True
+)
 
 # Add information about the app
 st.sidebar.title('About')
