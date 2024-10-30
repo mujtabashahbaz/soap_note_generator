@@ -1,19 +1,17 @@
 import streamlit as st
 import requests
 
-# List of dental specialties
+# List of medical specialties for GPs
 specialties = [
-    "General Dentistry",
-    "Orthodontics",
-    "Periodontics",
-    "Endodontics",
-    "Prosthodontics",
-    "Pediatric Dentistry",
-    "Oral and Maxillofacial Surgery",
-    "Oral and Maxillofacial Pathology",
-    "Oral and Maxillofacial Radiology",
-    "Dental Public Health",
-    "Oral Medicine"
+    "General Practice",
+    "Family Medicine",
+    "Internal Medicine",
+    "Pediatrics",
+    "Geriatrics",
+    "Sports Medicine",
+    "Preventive Medicine",
+    "Emergency Medicine",
+    "Occupational Medicine",
 ]
 
 # Function to get or set the API key
@@ -24,8 +22,8 @@ def get_openai_api_key():
 
 # Specialty-based prompts for SOAP note generation
 def get_specialty_prompt(specialty, subjective, objective):
-    if specialty == "Orthodontics":
-        return f"""You are an experienced orthodontist. Generate a comprehensive SOAP note for the following case:
+    if specialty == "Pediatrics":
+        return f"""You are an experienced pediatrician. Generate a comprehensive SOAP note for a pediatric case.
 
         Subjective: {subjective}
 
@@ -37,14 +35,14 @@ def get_specialty_prompt(specialty, subjective, objective):
             - Differential Diagnoses (list at least 3)
         2. Plan:
             - Diagnostic Tests or Procedures
-            - Non-Pharmacological Treatments (e.g., braces, aligners)
-            - Pharmacological Treatments (with specific medication names and dosages if needed)
+            - Non-Pharmacological Treatments
+            - Pharmacological Treatments (specific medication names and dosages if applicable)
             - Patient Education and Counseling
             - Follow-up Recommendations
         """
     
-    elif specialty == "Periodontics":
-        return f"""You are an experienced periodontist. Generate a comprehensive SOAP note for a periodontal case.
+    elif specialty == "Geriatrics":
+        return f"""You are an experienced geriatrician. Generate a comprehensive SOAP note for a geriatric case.
 
         Subjective: {subjective}
 
@@ -52,18 +50,18 @@ def get_specialty_prompt(specialty, subjective, objective):
 
         Please provide the following sections:
         1. Assessment:
-            - Primary Diagnosis of any periodontal disease
+            - Primary Diagnosis
             - Differential Diagnoses (list at least 3)
         2. Plan:
             - Diagnostic Tests or Procedures
-            - Non-Pharmacological Treatments (e.g., scaling, root planing)
-            - Pharmacological Treatments (with medication names and dosages, e.g., antibiotics)
+            - Non-Pharmacological Treatments
+            - Pharmacological Treatments (medications with dosages)
             - Patient Education and Counseling
             - Follow-up Recommendations
         """
     
-    elif specialty == "Endodontics":
-        return f"""You are an experienced endodontist. Generate a SOAP note for an endodontic case.
+    elif specialty == "Sports Medicine":
+        return f"""You are an experienced sports medicine physician. Generate a comprehensive SOAP note for a sports injury or condition.
 
         Subjective: {subjective}
 
@@ -71,20 +69,18 @@ def get_specialty_prompt(specialty, subjective, objective):
 
         Please provide the following sections:
         1. Assessment:
-            - Primary Diagnosis related to dental pulp issues
+            - Primary Diagnosis
             - Differential Diagnoses (list at least 3)
         2. Plan:
-            - Diagnostic Tests or Procedures (e.g., X-rays)
-            - Non-Pharmacological Treatments (e.g., root canal treatment)
-            - Pharmacological Treatments (medications with dosages for pain or infection management)
+            - Diagnostic Tests or Procedures (e.g., imaging, physical assessments)
+            - Non-Pharmacological Treatments (e.g., physical therapy, exercise)
+            - Pharmacological Treatments (medications for pain or inflammation)
             - Patient Education and Counseling
             - Follow-up Recommendations
         """
     
-    # Add similar prompts for other specialties...
-
-    # Default for General Dentistry or unspecified specialties
-    return f"""You are a general dentist. Generate a comprehensive SOAP note.
+    # Default for General Practice or unspecified specialties
+    return f"""You are a general practitioner. Generate a comprehensive SOAP note.
 
     Subjective: {subjective}
 
@@ -114,7 +110,7 @@ def generate_soap_note(specialty, subjective, objective, api_key):
     data = {
         "model": "gpt-4",
         "messages": [
-            {"role": "system", "content": "You are an experienced dentist generating SOAP notes."},
+            {"role": "system", "content": "You are an experienced general practitioner generating SOAP notes."},
             {"role": "user", "content": prompt}
         ]
     }
@@ -137,13 +133,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title('AI-Powered SOAP Note Generator for Dentists')
+st.title('AI-Powered SOAP Note Generator for General Practitioners')
 
 # API Key input
 api_key = get_openai_api_key()
 
-# Select the dental specialty
-specialty = st.selectbox("Select Your Dental Specialty:", specialties)
+# Select the medical specialty
+specialty = st.selectbox("Select Your Medical Specialty:", specialties)
 
 # Subjective and Objective inputs (manual entry)
 st.subheader('Subjective')
@@ -176,7 +172,7 @@ st.markdown(
 
 # Add information about the app
 st.sidebar.title('About')
-st.sidebar.info('This app generates comprehensive medical SOAP notes tailored to various dental subspecialties. Choose your specialty, input subjective and objective details, and let AI help generate the rest of the note.')
+st.sidebar.info('This app generates comprehensive SOAP notes tailored to various medical subspecialties. Choose your specialty, input subjective and objective details, and let AI help generate the rest of the note.')
 
 # Add a note about the API key
 st.sidebar.title('API Key')
